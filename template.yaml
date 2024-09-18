@@ -1,0 +1,135 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  data-transformation
+
+  Sample SAM Template for data-transformation
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20   
+    Environment:
+      Variables:          
+        MY_COGNITO_POOL_APP_CLIENT_ID: AQICAHhaUhEUGnpB66WSJ5sjYY8vc9jyJxQmTY7Au/9ra4x57QETRdnSvZ4vmGcOYfegUMS1AAAAeDB2BgkqhkiG9w0BBwagaTBnAgEAMGIGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMbK6gkv/hgCPjwycwAgEQgDU5rlMm1ixbpd1m2f851TJCAGPmOHgg4FPzk3FadttnFhK5KA7nJY9sbCzKu64sRIqGHjrjww==
+        MY_COGNITO_POOL_APP_CLIENT_SECRET: AQICAHhaUhEUGnpB66WSJ5sjYY8vc9jyJxQmTY7Au/9ra4x57QFLeXDWM+PmC24HFzt6jgfNAAAAlTCBkgYJKoZIhvcNAQcGoIGEMIGBAgEAMHwGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMJjUyeR0822omcOWIAgEQgE+HewGTDJvo0XTpap+cVVG0HRO9PU62c5bq264ZvfnXsI33iJ15bO6LqM0z/pPjta2wth+YBMlHKr5JEiZi49Y5h7yplL1XeX5ZcZZyO3z8
+        MY_COGNITO_POOL_ID: AQICAHhaUhEUGnpB66WSJ5sjYY8vc9jyJxQmTY7Au/9ra4x57QHcJ/1NH5C0AGiEz/BUPhGTAAAAcjBwBgkqhkiG9w0BBwagYzBhAgEAMFwGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMcYajqNNrOqmmnI4EAgEQgC810S1iWbGJCihW+OBsCE40Nf4VVFSY5oBwWpkwlO0gvLPK4b5tF+8W6Lo2T6+iXg==
+    MemorySize: 512
+    Runtime: java17
+    Architectures:
+      - x86_64    
+    
+    # You can add LoggingConfig parameters such as the Logformat, Log Group, and SystemLogLevel or ApplicationLogLevel. Learn more here https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html#sam-function-loggingconfig.
+    LoggingConfig:
+      LogFormat: JSON
+Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: open-api.yaml
+                   
+  CreateUserHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: DataTransformationApi
+      Handler: com.data.transformation.app.CreateUserHandler::handleRequest                  
+      Events:
+        CreateUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /users
+            Method: post
+            RestApiId:
+              Ref: MyApi
+  ConfirmUserHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: DataTransformationApi
+      Handler: com.data.transformation.app.ConfirmUserHandler::handleRequest                 
+      Events:
+        ConfirmUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /confirm
+            Method: post
+            RestApiId:
+              Ref: MyApi
+  LoginUserHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: DataTransformationApi
+      Handler: com.data.transformation.app.LoginUserHandler::handleRequest                 
+      Events:
+        LoginUser:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /login
+            Method: post
+            RestApiId:
+              Ref: MyApi
+  AddUserToGroupHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: DataTransformationApi
+      Handler: com.data.transformation.app.AddUserToGroupHandler::handleRequest    
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - 'cognito-idp:AdminAddUserToGroup'
+              Resource: "arn:aws:cognito-idp:eu-north-1:514400621410:userpool/eu-north-1_R4M1TlpAv"
+      Events:
+        AddUserToGroup:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /users/{userName}/add-to-group
+            Method: post
+            RestApiId:
+              Ref: MyApi
+  GetUserHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: DataTransformationApi
+      Handler: com.data.transformation.app.GetUserHandler::handleRequest          
+      Events:
+        AddUserToGroup:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /users/me
+            Method: get
+            RestApiId:
+              Ref: MyApi
+
+  ApplicationResourceGroup:
+    Type: AWS::ResourceGroups::Group
+    Properties:
+      Name:
+        Fn::Sub: ApplicationInsights-SAM-${AWS::StackName}
+      ResourceQuery:
+        Type: CLOUDFORMATION_STACK_1_0
+  ApplicationInsightsMonitoring:
+    Type: AWS::ApplicationInsights::Application
+    Properties:
+      ResourceGroupName:
+        Ref: ApplicationResourceGroup
+      AutoConfigurationEnabled: 'true'
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  CreateUserApi:
+    Description: API Gateway endpoint URL for Prod stage for CreateUserHandler Function
+    Value: !Sub "https://${MyApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/users"
+  CreateUserHandlerFunction:
+    Description: CreateUserHandlerFunction ARN
+    Value: !GetAtt CreateUserHandlerFunction.Arn
+  CreateUserHandlerFunctionIamRole:
+    Description: Implicit IAM Role created for Create UserHandler Function
+    Value: !GetAtt CreateUserHandlerFunctionRole.Arn
+

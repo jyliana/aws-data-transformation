@@ -1,0 +1,76 @@
+openapi: "3.0.1"
+info:
+  title: "api-cognito-stack"
+  version: "1.0"
+servers:
+- url: "https://rr9kaqxlee.execute-api.eu-north-1.amazonaws.com/{basePath}"
+  variables:
+    basePath:
+      default: "Prod"
+paths:
+  /login:
+    post:
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:514400621410:function:api-cognito-stack-LoginUserHandlerFunction-gk6QBlpEXRg6/invocations"
+        passthroughBehavior: "when_no_match"
+  /users:
+    post:
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:514400621410:function:api-cognito-stack-CreateUserHandlerFunction-nxFDq8x2Qwvj/invocations"
+        passthroughBehavior: "when_no_match"
+  /users/me:
+    get:
+      parameters:
+      - name: "AccessToken"
+        in: "header"
+        required: true
+        schema:
+          type: "string"
+      security:
+      - AppUsersApiAuthorizer: []
+      x-amazon-apigateway-request-validator: "Validate query string parameters and\
+        \ headers"
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:514400621410:function:api-cognito-stack-GetUserHandlerFunction-8deLlQD2JzT9/invocations"
+        passthroughBehavior: "when_no_match"
+  /confirm:
+    post:
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:514400621410:function:api-cognito-stack-ConfirmUserHandlerFunction-Xzil4qbqF6r0/invocations"
+        passthroughBehavior: "when_no_match"
+  /users/{userName}/add-to-group:
+    post:
+      parameters:
+      - name: "userName"
+        in: "path"
+        required: true
+        schema:
+          type: "string"
+      x-amazon-apigateway-integration:
+        type: "aws_proxy"
+        httpMethod: "POST"
+        uri: "arn:aws:apigateway:eu-north-1:lambda:path/2015-03-31/functions/arn:aws:lambda:eu-north-1:514400621410:function:api-cognito-stack-AddUserToGroupHandlerFunction-fcjRFd0bF04N/invocations"
+        passthroughBehavior: "when_no_match"
+components:
+  securitySchemes:
+    AppUsersApiAuthorizer:
+      type: "apiKey"
+      name: "Authorization"
+      in: "header"
+      x-amazon-apigateway-authtype: "cognito_user_pools"
+      x-amazon-apigateway-authorizer:
+        type: "cognito_user_pools"
+        providerARNs:
+        - "arn:aws:cognito-idp:eu-north-1:514400621410:userpool/eu-north-1_R4M1TlpAv"
+x-amazon-apigateway-request-validators:
+  Validate query string parameters and headers:
+    validateRequestParameters: true
+    validateRequestBody: false
